@@ -17,23 +17,32 @@ public class Main {
 
         ContainerController containerController = runtime.createMainContainer(profile);
 
-        CSVParser parser = new CSVParser("data/stations.csv", new String[] {"terminal", "name", "lat", "long", "dockcount"});
+        String[] argsCentral = new String[] {"data/bikes.txt", "955"};
 
-        for (String station: parser.getTerminals()) {
-            AgentController stationAgentController;
-            try {
-                String[] param = new String[5];
-                param[0] = station;
-                param[1] = parser.getData(station, "name");
-                param[2] = parser.getData(station, "dockcount");
-                param[3] = parser.getData(station, "lat");
-                param[4] = parser.getData(station, "long");
-
-                stationAgentController = containerController.createNewAgent(station, "Station", param);
-                stationAgentController.start();
-            } catch (StaleProxyException e) {
-                e.printStackTrace();
-            }
+        try {
+            AgentController centralAgentController = containerController.createNewAgent("Central", "Central", argsCentral);
+            centralAgentController.start();
+        } catch (StaleProxyException e) {
+            e.printStackTrace();
         }
+
+//        StationParser stationParser = new StationParser("data/stations.csv", new String[] {"terminal", "name", "lat", "long", "dockcount"});
+//
+//        for (String station: stationParser.getTerminals()) {
+//            AgentController stationAgentController;
+//            try {
+//                String[] argsStation = new String[5];
+//                argsStation[0] = station;
+//                argsStation[1] = stationParser.getData(station, "name");
+//                argsStation[2] = stationParser.getData(station, "dockcount");
+//                argsStation[3] = stationParser.getData(station, "lat");
+//                argsStation[4] = stationParser.getData(station, "long");
+//
+//                stationAgentController = containerController.createNewAgent(station, "Station", argsStation);
+//                stationAgentController.start();
+//            } catch (StaleProxyException e) {
+//                e.printStackTrace();
+//            }
+//        }
     }
 }
