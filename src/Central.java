@@ -38,14 +38,17 @@ public class Central extends Agent {
                             bikes.remove();
                             numBikes -= 1;
                         }
-                        reply.setOntology("BIKEALLOCATION");
+                        reply.setOntology("BIKEALLOCATION-REPLY");
                         reply.setPerformative(ACLMessage.INFORM);
                         reply.setContent(content);
                         myAgent.send(reply);
+                        System.out.println("Central enviando para " + receivedMessage.getSender().getLocalName());
                     }
                     else {
                         block();
                     }
+                }else {
+                    block();
                 }
 
             }

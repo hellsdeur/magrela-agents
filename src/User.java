@@ -45,10 +45,11 @@ public class User extends Agent{
             public void action() {
                 ACLMessage bikeRecvMsg = myAgent.receive();
                 if (bikeRecvMsg != null) {
-                    String content = bikeRecvMsg.getContent();
-                    bike[0] = content;
-                    System.out.println("--->" + bikeRecvMsg.getSender().getName() + ": " + bike[0]);
-                }
+                    if (bikeRecvMsg.getOntology().equalsIgnoreCase("BIKEREQUEST-REPLY")) {
+                        String content = bikeRecvMsg.getContent();
+                        bike[0] = content;
+                        System.out.println("--->" + bikeRecvMsg.getSender().getName() + ": " + bike[0]);
+                }}
                 else {
                     block();
                 }
@@ -64,6 +65,7 @@ public class User extends Agent{
                 bikeDevolutionMessage.setOntology("BIKEDEVOLUTION");
                 bikeDevolutionMessage.setContent("devolution");
                 myAgent.send(bikeDevolutionMessage);
+                System.out.println(myAgent.getAID().getLocalName()+" is trying to return the bike");
             }
         });
     }

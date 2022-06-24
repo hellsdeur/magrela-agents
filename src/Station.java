@@ -16,6 +16,7 @@ import java.util.Queue;
 
 public class Station extends Agent {
 
+
     @Override
     protected void setup() {
         Object[] param = getArguments();
@@ -27,16 +28,16 @@ public class Station extends Agent {
         Queue<String> bikes = new LinkedList<String>();
 
         // create a bike rental service
-        ServiceDescription sd = new ServiceDescription();
-        sd.setType("Bike Service");
-        sd.setName("Rental");
-        registerService(sd);
-
-        // create a bike devolution service
-        sd = new ServiceDescription();
-        sd.setType("Bike Service");
-        sd.setName("Devolution");
-        registerService(sd);
+//        ServiceDescription sd = new ServiceDescription();
+//        sd.setType("Bike Service");
+//        sd.setName("Rental");
+//        registerService(sd);
+//
+//        // create a bike devolution service
+//        sd = new ServiceDescription();
+//        sd.setType("Bike Service");
+//        sd.setName("Devolution");
+//        registerService(sd);
 
         // confirmation print (might delete later)
         addBehaviour(new OneShotBehaviour(this) {
@@ -56,18 +57,6 @@ public class Station extends Agent {
                 bikesRequest.setContent(Integer.toString(dockcount));
                 myAgent.send(bikesRequest);
 
-                ACLMessage bikesReceived = myAgent.receive();
-                if (bikesReceived != null) {
-                    String content = bikesReceived.getContent();
-                    String[] arrStringBikes = content.split(" ");
-                    for (String stringBike: arrStringBikes) {
-                        bikes.add(stringBike);
-                    }
-                    System.out.println(bikes.size() + " bikes were received.");
-                }
-                else {
-                    block();
-                }
             }
         });
 
@@ -77,12 +66,14 @@ public class Station extends Agent {
             public void action() {
                 ACLMessage bikesReceived = myAgent.receive();
                 if (bikesReceived != null) {
-                    String content = bikesReceived.getContent();
-                    String[] arrStringBikes = content.split(" ");
-                    for (String stringBike: arrStringBikes) {
-                        bikes.add(stringBike);
+                    if (bikesReceived.getOntology().equalsIgnoreCase("BIKEALLOCATION-REPLY")){
+                        String content = bikesReceived.getContent();
+                        String[] arrStringBikes = content.split(" ");
+                        for (String stringBike: arrStringBikes) {
+                            bikes.add(stringBike);
+                        }
+                        System.out.println(bikes.size() + " bikes were received by "+ myAgent.getAID().getLocalName());
                     }
-                    System.out.println(bikes.size() + " bikes were received.");
                 }
                 else {
                     block();
@@ -96,36 +87,52 @@ public class Station extends Agent {
             public void action() {
                 ACLMessage receivedMessage = myAgent.receive();
                 if (receivedMessage != null) {
+
                     // create reply
                     ACLMessage reply = receivedMessage.createReply();
+                    String ontology = receivedMessage.getOntology();
                     String content = receivedMessage.getContent();
 
-                    if (content.equalsIgnoreCase("request")) {
-                        System.out.println("User " + receivedMessage.getSender().getName() + " wants a bike.");
-                        System.out.println("Bike allocated!");
+
+
+                    if (ontology.equalsIgnoreCase("BIKEREQUEST")) {
+                        System.out.println("Bike allocated to "+ receivedMessage.getSender().getName() + "!"
+                                              +"---message from "+ myAgent.getAID().getLocalName()  );
 
                         reply.setPerformative(ACLMessage.INFORM);
+                        reply.setOntology("BIKEREQUEST-REPLY");
                         reply.setContent(bikes.peek());
                         bikes.remove();
                         myAgent.send(reply);
-                    }
-                    else if (content.equalsIgnoreCase("devolution")) {
-                        System.out.println("User " + receivedMessage.getSender().getName() + " returned a bike.");
-                        System.out.println("Bike returned!");
+
+                    } else if (ontology.equalsIgnoreCase("BIKEDEVOLUTION")) {
+                        System.out.println("Bike returned successfully by "+ receivedMessage.getSender().getName()  +"!"
+                                                     +"---message from "+ myAgent.getAID().getLocalName()  );
 
                         reply.setPerformative(ACLMessage.INFORM);
+                        reply.setOntology("BIKEDEVOLUTION-REPLY");
                         reply.setContent("Devolution accepted.");
                         myAgent.send(reply);
                     }
                     else {
                         // TODO the problem is right here, this behaviour is catching messages from another one
-                        System.out.println(content);
+                        System.out.println(content +"---message from "+ myAgent.getAID().getLocalName());
                         block();
                     }
                 }
+                else {
+                    block();
+                }
             }
         });
+
     }
+
+
+
+
+
+
 
     // DF registration
     protected void registerService(ServiceDescription sd) {
