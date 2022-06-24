@@ -52,7 +52,7 @@ public class Station extends Agent {
             public void action() {
                 ACLMessage bikesRequest = new ACLMessage(ACLMessage.REQUEST);
                 bikesRequest.addReceiver(new AID("Central", AID.ISLOCALNAME));
-                bikesRequest.setOntology("Bike-Allocation");
+                bikesRequest.setOntology("BIKEALLOCATION");
                 bikesRequest.setContent(Integer.toString(dockcount));
                 myAgent.send(bikesRequest);
 
@@ -71,6 +71,7 @@ public class Station extends Agent {
             }
         });
 
+        // receive bikes from central
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
@@ -98,6 +99,7 @@ public class Station extends Agent {
                     // create reply
                     ACLMessage reply = receivedMessage.createReply();
                     String content = receivedMessage.getContent();
+
                     if (content.equalsIgnoreCase("request")) {
                         System.out.println("User " + receivedMessage.getSender().getName() + " wants a bike.");
                         System.out.println("Bike allocated!");
@@ -125,6 +127,7 @@ public class Station extends Agent {
         });
     }
 
+    // DF registration
     protected void registerService(ServiceDescription sd) {
         // create a new entry at DF
         DFAgentDescription dfd = new DFAgentDescription();
@@ -141,6 +144,7 @@ public class Station extends Agent {
         }
     }
 
+    // DF take down
     @Override
     protected void takeDown() {
         try {

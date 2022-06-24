@@ -27,7 +27,7 @@ public class Central extends Agent {
             public void action() {
                 ACLMessage receivedMessage = myAgent.receive();
                 if (receivedMessage != null) {
-                    if (receivedMessage.getOntology().equalsIgnoreCase("Bike-Allocation")) {
+                    if (receivedMessage.getOntology().equalsIgnoreCase("BIKEALLOCATION")) {
                         ACLMessage reply = receivedMessage.createReply();
                         int dockcount = Integer.parseInt(receivedMessage.getContent());
                         float ratioBikes = (float) dockcount / numDocks;
@@ -38,10 +38,9 @@ public class Central extends Agent {
                             bikes.remove();
                             numBikes -= 1;
                         }
-                        reply.setOntology("Bike-Allocation");
+                        reply.setOntology("BIKEALLOCATION");
                         reply.setPerformative(ACLMessage.INFORM);
                         reply.setContent(content);
-                        reply.addReceiver(new AID(receivedMessage.getSender().getLocalName(), AID.ISLOCALNAME));
                         myAgent.send(reply);
                     }
                     else {

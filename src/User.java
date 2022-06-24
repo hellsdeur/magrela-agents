@@ -18,6 +18,7 @@ public class User extends Agent{
         int delay = Integer.parseInt(param[4].toString());
         String[] bike = new String[1];
 
+        // confirmation print (might delete later)
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
@@ -25,6 +26,7 @@ public class User extends Agent{
             }
         });
 
+        // requesting a bike
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
@@ -37,6 +39,7 @@ public class User extends Agent{
             }
         });
 
+        // listen for the bike confirmation
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
@@ -44,7 +47,7 @@ public class User extends Agent{
                 if (bikeRecvMsg != null) {
                     String content = bikeRecvMsg.getContent();
                     bike[0] = content;
-                    System.out.println("--->" + bikeRecvMsg.getSender().getName() + ": " + content);
+                    System.out.println("--->" + bikeRecvMsg.getSender().getName() + ": " + bike[0]);
                 }
                 else {
                     block();
@@ -52,12 +55,13 @@ public class User extends Agent{
             }
         });
 
+        // bike devolution after a given delay
         addBehaviour(new WakerBehaviour(this, delay) {
             @Override
             protected void onWake() {
                 ACLMessage bikeDevolutionMessage = new ACLMessage(ACLMessage.REQUEST);
                 bikeDevolutionMessage.addReceiver(new AID(station, AID.ISLOCALNAME));
-                bikeDevolutionMessage.setOntology("Bike-Devolution");
+                bikeDevolutionMessage.setOntology("BIKEDEVOLUTION");
                 bikeDevolutionMessage.setContent("devolution");
                 myAgent.send(bikeDevolutionMessage);
             }
