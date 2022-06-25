@@ -61,7 +61,24 @@ public class User extends Agent{
 
                         bike[0] = msg.bike;
                         System.out.println(myAgent.getLocalName()+ " received " + msg.bike);
-                }}
+
+
+                } else if (bikeRecvMsg.getOntology().equalsIgnoreCase("BIKEDEVOLUTION-REPLY")) {
+
+                        MessageBikeForUser msg = null;
+                        try {
+                            msg = (MessageBikeForUser) bikeRecvMsg.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        System.out.println(myAgent.getLocalName()+" is going to "+msg.station);
+
+                        bike[0] = null;
+                        System.out.println(myAgent.getLocalName()+ " returned bike " + msg.bike);
+                    }
+
+                }
                 else {
                     block();
                 }
@@ -75,9 +92,9 @@ public class User extends Agent{
                 ACLMessage bikeDevolutionMessage = new ACLMessage(ACLMessage.REQUEST);
                 bikeDevolutionMessage.addReceiver(new AID("Central", AID.ISLOCALNAME));
                 bikeDevolutionMessage.setOntology("BIKEDEVOLUTION");
-                bikeDevolutionMessage.setContent("devolution");
+                bikeDevolutionMessage.setContent(bike[0]);
                 myAgent.send(bikeDevolutionMessage);
-                System.out.println(myAgent.getAID().getLocalName()+" is trying to return the bike");
+                System.out.println(myAgent.getAID().getLocalName()+" is trying to return the bike " + bike[0]);
             }
         });
     }

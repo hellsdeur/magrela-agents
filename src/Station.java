@@ -118,6 +118,37 @@ public class Station extends Agent {
                         myAgent.send(reply);
 
                     }
+                    else if (receivedMessage.getOntology().equalsIgnoreCase("STATIONBIKEDEVOLUTION")) {
+
+                        System.out.println("Allocating space for user ---" + myAgent.getLocalName());
+                        ACLMessage reply = receivedMessage.createReply();
+
+
+                        MessageBikeForUser msg = null;
+                        try {
+                            msg = (MessageBikeForUser) receivedMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        System.out.println(bikes.size());
+
+                        bikes.add(msg.bike);
+
+                        System.out.println(bikes.size());
+
+
+                        reply.setPerformative(ACLMessage.INFORM);
+                        reply.setOntology("STATIONBIKEDEVOLUTION-REPLY");
+                        try {
+                            reply.setContentObject(msg);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        myAgent.send(reply);
+
+                    }
                 }
                 else {
                     block();

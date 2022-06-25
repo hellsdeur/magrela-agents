@@ -79,6 +79,7 @@ public class Central extends Agent {
 
                         System.out.println("Request from "+nameSender+" received by Central");
 
+                        //Select random station
                         List<String> keysAsArray = new ArrayList<String>(stations.keySet());
                         Random random = new Random();
                         String nameStationSelected = keysAsArray.get(random.nextInt(keysAsArray.size()));
@@ -130,8 +131,61 @@ public class Central extends Agent {
 
 
                     } else if (receivedMessage.getOntology().equalsIgnoreCase("BIKEDEVOLUTION")) {
-                        System.out.println("dev");
+                        String nameSender = receivedMessage.getSender().getLocalName();
+
+                        System.out.println("Devolution request from "+nameSender+" received by Central");
+
+
+                        //Select random station
+                        List<String> keysAsArray = new ArrayList<String>(stations.keySet());
+                        Random random = new Random();
+                        String nameStationSelected = keysAsArray.get(random.nextInt(keysAsArray.size()));
+
+
+                        String Userbike = receivedMessage.getContent();
+                        ACLMessage requestStation = new ACLMessage(ACLMessage.REQUEST);
+
+                        MessageBikeForUser msgContent = new MessageBikeForUser(Userbike, nameSender, nameStationSelected);
+
+                        requestStation.addReceiver(new AID(nameStationSelected, AID.ISLOCALNAME));
+                        requestStation.setOntology("STATIONBIKEDEVOLUTION");
+
+                        try {
+                            requestStation.setContentObject(msgContent);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        myAgent.send(requestStation);
+
+                        System.out.println("Central request bike devolution for "+ nameStationSelected);
                     }
+                    else if (receivedMessage.getOntology().equalsIgnoreCase("STATIONBIKEDEVOLUTION-REPLY")) {
+
+                        MessageBikeForUser msg = null;
+                        try {
+                            msg = (MessageBikeForUser) receivedMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        ACLMessage devolution = new ACLMessage(ACLMessage.INFORM);
+
+                        devolution.addReceiver(new AID(msg.user, AID.ISLOCALNAME));
+                        devolution.setOntology("BIKEDEVOLUTION-REPLY");
+                        try {
+                            devolution.setContentObject(msg);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        myAgent.send(devolution);
+
+                        System.out.println("Informing "+ msg.user+" available space for devolution in "
+                                + msg.station +"---message from Central");
+
+
+                    }
+
                 }else {
                     block();
                 }

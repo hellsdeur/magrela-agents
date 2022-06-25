@@ -1,0 +1,15 @@
+Windows
+
+set CLASSPATH=\mltagts\jade\lib\jade.jar;\mltagts\jade\lib\jadeTools.jar;\mltagts\jade\lib\http.jar;\mltagts\jade\lib\commons-codec\commons-codec-1.3.jar;.
+
+cd C:\Users\Carol\IdeaProjects\magrela-agents\out\production\magrela-agents
+
+
+java jade.Boot -container -agents Helder:User(Helder,UW-04,1.645,5.9897,5000)
+
+
+java jade.Boot -container -agents UW-04:Station(kek,lol,10,12.65,69.420);Helder:User(Helder,UW-04,1.645,5.9897,5000)
+
+Terminal
+
+
