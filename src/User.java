@@ -5,6 +5,7 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 
 public class User extends Agent{
 
@@ -16,7 +17,7 @@ public class User extends Agent{
         float latitude = Float.parseFloat(param[2].toString());
         float longitude = Float.parseFloat(param[3].toString());
         int delay = Integer.parseInt(param[4].toString());
-        String[] bike = new String[1];
+        final String[] bike = new String[1];
 
         // confirmation print (might delete later)
         addBehaviour(new OneShotBehaviour(this) {
@@ -32,10 +33,12 @@ public class User extends Agent{
             public void action() {
                 // bike allocation request message
                 ACLMessage bikeAllocMsg = new ACLMessage(ACLMessage.REQUEST);
-                bikeAllocMsg.addReceiver(new AID(station, AID.ISLOCALNAME));
+                bikeAllocMsg.addReceiver(new AID("Central", AID.ISLOCALNAME));
                 bikeAllocMsg.setOntology("BIKEREQUEST");
                 bikeAllocMsg.setContent("request");
                 myAgent.send(bikeAllocMsg);
+
+                System.out.println(myAgent.getLocalName()+" request a bike");
             }
         });
 
@@ -46,9 +49,18 @@ public class User extends Agent{
                 ACLMessage bikeRecvMsg = myAgent.receive();
                 if (bikeRecvMsg != null) {
                     if (bikeRecvMsg.getOntology().equalsIgnoreCase("BIKEREQUEST-REPLY")) {
-                        String content = bikeRecvMsg.getContent();
-                        bike[0] = content;
-                        System.out.println("--->" + bikeRecvMsg.getSender().getName() + ": " + bike[0]);
+
+                        MessageBikeForUser msg = null;
+                        try {
+                            msg = (MessageBikeForUser) bikeRecvMsg.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        System.out.println(myAgent.getLocalName()+" is going to "+msg.station);
+
+                        bike[0] = msg.bike;
+                        System.out.println(myAgent.getLocalName()+ " received " + msg.bike);
                 }}
                 else {
                     block();
@@ -61,7 +73,7 @@ public class User extends Agent{
             @Override
             protected void onWake() {
                 ACLMessage bikeDevolutionMessage = new ACLMessage(ACLMessage.REQUEST);
-                bikeDevolutionMessage.addReceiver(new AID(station, AID.ISLOCALNAME));
+                bikeDevolutionMessage.addReceiver(new AID("Central", AID.ISLOCALNAME));
                 bikeDevolutionMessage.setOntology("BIKEDEVOLUTION");
                 bikeDevolutionMessage.setContent("devolution");
                 myAgent.send(bikeDevolutionMessage);

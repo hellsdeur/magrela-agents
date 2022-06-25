@@ -7,7 +7,11 @@ import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.UnreadableException;
 
+import javax.management.StringValueExp;
+import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -64,15 +68,55 @@ public class Station extends Agent {
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
-                ACLMessage bikesReceived = myAgent.receive();
-                if (bikesReceived != null) {
-                    if (bikesReceived.getOntology().equalsIgnoreCase("BIKEALLOCATION-REPLY")){
-                        String content = bikesReceived.getContent();
+                ACLMessage receivedMessage = myAgent.receive();
+                if (receivedMessage != null) {
+                    if (receivedMessage.getOntology().equalsIgnoreCase("BIKEALLOCATION-REPLY")){
+                        String content = receivedMessage.getContent();
                         String[] arrStringBikes = content.split(" ");
                         for (String stringBike: arrStringBikes) {
                             bikes.add(stringBike);
                         }
                         System.out.println(bikes.size() + " bikes were received by "+ myAgent.getAID().getLocalName());
+
+                        ACLMessage reply = receivedMessage.createReply();
+
+                        String lat = String.valueOf(latitude);
+                        String lon = String.valueOf(longitude);
+                        String numbike = String.valueOf(bikes.size());
+                        String dockcount_str = String.valueOf(dockcount);
+
+                        String contentInfo = lat + ' ' + lon + ' ' + numbike + ' ' + dockcount_str;
+
+                        reply.setPerformative(ACLMessage.CONFIRM);
+                        reply.setOntology("RECEIVEBIKE-CONFIRMATION");
+                        reply.setContent(contentInfo);
+                        myAgent.send(reply);
+
+                    } else if (receivedMessage.getOntology().equalsIgnoreCase("STATIONBIKEREQUEST")) {
+
+                        System.out.println("Allocating bike for user ---" + myAgent.getLocalName());
+                        ACLMessage reply = receivedMessage.createReply();
+
+
+                        MessageBikeForUser msg = null;
+                        try {
+                            msg = (MessageBikeForUser) receivedMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        MessageBikeForUser content = new MessageBikeForUser(bikes.peek(), msg.user, msg.station);
+
+                        reply.setPerformative(ACLMessage.INFORM);
+                        reply.setOntology("STATIONBIKEREQUEST-REPLY");
+                        try {
+                            reply.setContentObject(content);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        bikes.remove();
+                        myAgent.send(reply);
+
                     }
                 }
                 else {
@@ -82,49 +126,49 @@ public class Station extends Agent {
         });
 
         // listen for requests or devolution
-        addBehaviour(new CyclicBehaviour(this) {
-            @Override
-            public void action() {
-                ACLMessage receivedMessage = myAgent.receive();
-                if (receivedMessage != null) {
-
-                    // create reply
-                    ACLMessage reply = receivedMessage.createReply();
-                    String ontology = receivedMessage.getOntology();
-                    String content = receivedMessage.getContent();
-
-
-
-                    if (ontology.equalsIgnoreCase("BIKEREQUEST")) {
-                        System.out.println("Bike allocated to "+ receivedMessage.getSender().getName() + "!"
-                                              +"---message from "+ myAgent.getAID().getLocalName()  );
-
-                        reply.setPerformative(ACLMessage.INFORM);
-                        reply.setOntology("BIKEREQUEST-REPLY");
-                        reply.setContent(bikes.peek());
-                        bikes.remove();
-                        myAgent.send(reply);
-
-                    } else if (ontology.equalsIgnoreCase("BIKEDEVOLUTION")) {
-                        System.out.println("Bike returned successfully by "+ receivedMessage.getSender().getName()  +"!"
-                                                     +"---message from "+ myAgent.getAID().getLocalName()  );
-
-                        reply.setPerformative(ACLMessage.INFORM);
-                        reply.setOntology("BIKEDEVOLUTION-REPLY");
-                        reply.setContent("Devolution accepted.");
-                        myAgent.send(reply);
-                    }
-                    else {
-                        // TODO the problem is right here, this behaviour is catching messages from another one
-                        System.out.println(content +"---message from "+ myAgent.getAID().getLocalName());
-                        block();
-                    }
-                }
-                else {
-                    block();
-                }
-            }
-        });
+//        addBehaviour(new CyclicBehaviour(this) {
+//            @Override
+//            public void action() {
+//                ACLMessage receivedMessage = myAgent.receive();
+//                if (receivedMessage != null) {
+//
+//                    // create reply
+//                    ACLMessage reply = receivedMessage.createReply();
+//                    String ontology = receivedMessage.getOntology();
+//                    String content = receivedMessage.getContent();
+//
+//
+//
+//                    if (ontology.equalsIgnoreCase("BIKEREQUEST")) {
+//                        System.out.println("Bike allocated to "+ receivedMessage.getSender().getName() + "!"
+//                                              +"---message from "+ myAgent.getAID().getLocalName()  );
+//
+//                        reply.setPerformative(ACLMessage.INFORM);
+//                        reply.setOntology("BIKEREQUEST-REPLY");
+//                        reply.setContent(bikes.peek());
+//                        bikes.remove();
+//                        myAgent.send(reply);
+//
+//                    } else if (ontology.equalsIgnoreCase("BIKEDEVOLUTION")) {
+//                        System.out.println("Bike returned successfully by "+ receivedMessage.getSender().getName()  +"!"
+//                                                     +"---message from "+ myAgent.getAID().getLocalName()  );
+//
+//                        reply.setPerformative(ACLMessage.INFORM);
+//                        reply.setOntology("BIKEDEVOLUTION-REPLY");
+//                        reply.setContent("Devolution accepted.");
+//                        myAgent.send(reply);
+//                    }
+//                    else {
+//                        // TODO the problem is right here, this behaviour is catching messages from another one
+//                        System.out.println(content +"---message from "+ myAgent.getAID().getLocalName());
+//                        block();
+//                    }
+//                }
+//                else {
+//                    block();
+//                }
+//            }
+//        });
 
     }
 
