@@ -2,15 +2,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-public class BikeParser {
+public class ParserBike {
     public Queue<String> bikes;
 
-    public BikeParser(String path) {
+    public ParserBike(String path) {
         bikes = new LinkedList<>();
 
         List<String> list = null;

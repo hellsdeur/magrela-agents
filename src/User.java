@@ -6,15 +6,18 @@ import jade.core.behaviours.WakerBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 
+import java.io.IOException;
+
 public class User extends Agent{
 
     @Override
     protected void setup() {
         Object[] param = getArguments();
-        String station = param[0].toString();
-        float latitude = Float.parseFloat(param[1].toString());
-        float longitude = Float.parseFloat(param[2].toString());
-        int delay = Integer.parseInt(param[3].toString());
+        double fromLatitude = Double.parseDouble(param[0].toString());
+        double fromLongitude = Double.parseDouble(param[1].toString());
+        double toLatitude = Double.parseDouble(param[2].toString());
+        double toLongitude = Double.parseDouble(param[3].toString());
+        int delay = Integer.parseInt(param[4].toString());
         final String[] bike = new String[1];
 
         // confirmation print (might delete later)
@@ -29,13 +32,17 @@ public class User extends Agent{
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
-                // user requests bike to the station
-
+                // user requests bike to the central
+                InfoUser infoUser = new InfoUser(null, fromLatitude, fromLongitude);
                 ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
                 AID receiver = new AID("Central", AID.ISLOCALNAME);
                 message.addReceiver(receiver);
                 message.setOntology("BIKEREQUEST");
-                message.setContent("request");
+                try {
+                    message.setContentObject(infoUser);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 myAgent.send(message);
 
                 System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: BIKEREQUEST");
@@ -53,32 +60,32 @@ public class User extends Agent{
                     // if BIKEREQUEST-REPLY, then unpack bikeInfo and give bike to the user
                     if (recvMessage.getOntology().equalsIgnoreCase("BIKEREQUEST-REPLY")) {
 
-                        BikeInfo bikeInfo = null;
+                        InfoBike infoBike = null;
 
                         try {
-                            bikeInfo = (BikeInfo) recvMessage.getContentObject();
+                            infoBike = (InfoBike) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
                             throw new RuntimeException(e);
                         }
 
-                        bike[0] = bikeInfo.bike;
+                        bike[0] = infoBike.bike;
 
-                        System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + bikeInfo.bike + " at " + bikeInfo.station);
+                        System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + infoBike.bike + " at " + infoBike.station);
                     }
                     // if BIKEDEVOLUTION-REPLY, then unpack bikeInfo and retrieve bike from the user
                     else if (recvMessage.getOntology().equalsIgnoreCase("BIKEDEVOLUTION-REPLY")) {
 
-                        BikeInfo bikeInfo = null;
+                        InfoBike infoBike = null;
 
                         try {
-                            bikeInfo = (BikeInfo) recvMessage.getContentObject();
+                            infoBike = (InfoBike) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
                             throw new RuntimeException(e);
                         }
 
                         bike[0] = null;
 
-                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + bikeInfo.bike + " at " + bikeInfo.station);
+                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + infoBike.bike + " at " + infoBike.station);
                     }
                 }
                 else {
@@ -93,12 +100,17 @@ public class User extends Agent{
             protected void onWake() {
                 // user returns bike to a station
 
-                ACLMessage bikeDevolutionMessage = new ACLMessage(ACLMessage.REQUEST);
+                InfoUser infoUser = new InfoUser(bike[0], toLatitude, toLongitude);
+                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
                 AID receiver = new AID("Central", AID.ISLOCALNAME);
-                bikeDevolutionMessage.addReceiver(receiver);
-                bikeDevolutionMessage.setOntology("BIKEDEVOLUTION");
-                bikeDevolutionMessage.setContent(bike[0]);
-                myAgent.send(bikeDevolutionMessage);
+                message.addReceiver(receiver);
+                message.setOntology("BIKEDEVOLUTION");
+                try {
+                    message.setContentObject(infoUser);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                myAgent.send(message);
 
                 System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: BIKEDEVOLUTION");
             }

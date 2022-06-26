@@ -6,10 +6,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-public class StationParser {
+public class ParserStation {
     private HashMap<String,HashMap<String, String>> map;
 
-    public StationParser(String path, String [] keys) throws IOException {
+    public ParserStation(String path, String [] keys) throws IOException {
         map = new HashMap<>();
 
         List<String> list = Files.readAllLines(Paths.get(path), StandardCharsets.UTF_8);

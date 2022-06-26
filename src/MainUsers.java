@@ -18,7 +18,7 @@ public class MainUsers {
 
         ContainerController containerController = runtime.createAgentContainer(profile);
 
-        String[] argsUser = new String[] {"UW-04","1.645","5.9897","5000"};
+        String[] argsUser = new String[] {"47.614315", "-122.354093", "47.602103","-122.316923", "5000"};
 
         try {
             AgentController userAgentController = containerController.createNewAgent("Helder", "User", argsUser);
