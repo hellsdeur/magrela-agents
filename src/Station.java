@@ -9,13 +9,8 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 
-import javax.management.StringValueExp;
 import java.io.IOException;
-import java.io.Serializable;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 
 public class Station extends Agent {
@@ -24,11 +19,10 @@ public class Station extends Agent {
     @Override
     protected void setup() {
         Object[] param = getArguments();
-        String station = param[0].toString();
-        String name = param[1].toString();
-        int dockcount = Integer.parseInt(param[2].toString());
-        float latitude = Float.parseFloat(param[3].toString());
-        float longitude = Float.parseFloat(param[4].toString());
+        String address = param[0].toString();
+        int dockcount = Integer.parseInt(param[1].toString());
+        float latitude = Float.parseFloat(param[2].toString());
+        float longitude = Float.parseFloat(param[3].toString());
         Queue<String> bikes = new LinkedList<String>();
 
         // create a bike rental service
@@ -47,107 +41,116 @@ public class Station extends Agent {
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
-                System.out.println("✓ Station " + getAID().getLocalName() + " created successfully.");
+                System.out.println("✓ [AGENT CREATED] Station " + getAID().getLocalName());
             }
         });
 
-        // request bikes from central
+        // bike batch allocation behaviour
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
-                ACLMessage bikesRequest = new ACLMessage(ACLMessage.REQUEST);
-                bikesRequest.addReceiver(new AID("Central", AID.ISLOCALNAME));
-                bikesRequest.setOntology("BIKEALLOCATION");
-                bikesRequest.setContent(Integer.toString(dockcount));
-                myAgent.send(bikesRequest);
+                // station requests bikes from central
 
+                StationInfo stationInfo = new StationInfo(latitude, longitude, bikes.size(), dockcount);
+                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+                AID receiver = new AID("Central", AID.ISLOCALNAME);
+                message.addReceiver(receiver);
+                message.setOntology("BIKEALLOCATION");
+                try {
+                    message.setContentObject(stationInfo);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                myAgent.send(message);
+
+                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t → " +  receiver.getLocalName() + "\t: BIKEALLOCATION");
             }
         });
 
-        // receive bikes from central
+        // bike transfer behavior
         addBehaviour(new CyclicBehaviour(this) {
             @Override
             public void action() {
-                ACLMessage receivedMessage = myAgent.receive();
-                if (receivedMessage != null) {
-                    if (receivedMessage.getOntology().equalsIgnoreCase("BIKEALLOCATION-REPLY")){
-                        String content = receivedMessage.getContent();
-                        String[] arrStringBikes = content.split(" ");
-                        for (String stringBike: arrStringBikes) {
-                            bikes.add(stringBike);
+
+                ACLMessage recvMessage = myAgent.receive();
+
+                if (recvMessage != null) {
+                    // if BIKEALLOCATION-REPLY, then receive bikes and enqueue
+                    if (recvMessage.getOntology().equalsIgnoreCase("BIKEALLOCATION-REPLY")){
+
+                        BikeBatchInfo bikeBatchInfo = null;
+                        try {
+                            bikeBatchInfo = (BikeBatchInfo) recvMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
                         }
-                        System.out.println(bikes.size() + " bikes were received by "+ myAgent.getAID().getLocalName());
+                        bikes.addAll(bikeBatchInfo.bikes);
 
-                        ACLMessage reply = receivedMessage.createReply();
+                        ACLMessage reply = recvMessage.createReply();
 
-                        String lat = String.valueOf(latitude);
-                        String lon = String.valueOf(longitude);
-                        String numbike = String.valueOf(bikes.size());
-                        String dockcount_str = String.valueOf(dockcount);
-
-                        String contentInfo = lat + ' ' + lon + ' ' + numbike + ' ' + dockcount_str;
-
+                        StationInfo stationInfo = new StationInfo(latitude, longitude, bikes.size(), dockcount);
                         reply.setPerformative(ACLMessage.CONFIRM);
                         reply.setOntology("RECEIVEBIKE-CONFIRMATION");
-                        reply.setContent(contentInfo);
+                        try {
+                            reply.setContentObject(stationInfo);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                         myAgent.send(reply);
 
-                    } else if (receivedMessage.getOntology().equalsIgnoreCase("STATIONBIKEREQUEST")) {
+                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: RECEIVEBIKE-CONFIRMATION (" + bikeBatchInfo.bikes.size() + " bikes)");
 
-                        System.out.println("Allocating bike for user ---" + myAgent.getLocalName());
-                        ACLMessage reply = receivedMessage.createReply();
+                    }
+                    // if STATIONBIKEREQUEST, unpack request and send bike to user
+                    else if (recvMessage.getOntology().equalsIgnoreCase("STATIONBIKEREQUEST")) {
 
+                        ACLMessage reply = recvMessage.createReply();
 
-                        MessageBikeForUser msg = null;
+                        BikeInfo bikeInfoRequest = null;
                         try {
-                            msg = (MessageBikeForUser) receivedMessage.getContentObject();
+                            bikeInfoRequest = (BikeInfo) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
                             throw new RuntimeException(e);
                         }
 
-                        MessageBikeForUser content = new MessageBikeForUser(bikes.peek(), msg.user, msg.station);
+                        BikeInfo bikeInfoReply = new BikeInfo(bikes.peek(), bikeInfoRequest.user, bikeInfoRequest.station);
+                        bikes.remove();
 
                         reply.setPerformative(ACLMessage.INFORM);
                         reply.setOntology("STATIONBIKEREQUEST-REPLY");
                         try {
-                            reply.setContentObject(content);
+                            reply.setContentObject(bikeInfoReply);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-                        bikes.remove();
                         myAgent.send(reply);
 
+                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: STATIONBIKEREQUEST-REPLY (" + bikeInfoReply.bike + ")");
+
                     }
-                    else if (receivedMessage.getOntology().equalsIgnoreCase("STATIONBIKEDEVOLUTION")) {
+                    // if STATIONBIKEDEVOLUTION, then unpack bikeInfo
+                    else if (recvMessage.getOntology().equalsIgnoreCase("STATIONBIKEDEVOLUTION")) {
 
-                        System.out.println("Allocating space for user ---" + myAgent.getLocalName());
-                        ACLMessage reply = receivedMessage.createReply();
+                        ACLMessage reply = recvMessage.createReply();
 
-
-                        MessageBikeForUser msg = null;
+                        BikeInfo bikeInfo = null;
                         try {
-                            msg = (MessageBikeForUser) receivedMessage.getContentObject();
+                            bikeInfo = (BikeInfo) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
                             throw new RuntimeException(e);
                         }
-
-                        System.out.println(bikes.size());
-
-                        bikes.add(msg.bike);
-
-                        System.out.println(bikes.size());
-
+                        bikes.add(bikeInfo.bike);
 
                         reply.setPerformative(ACLMessage.INFORM);
                         reply.setOntology("STATIONBIKEDEVOLUTION-REPLY");
                         try {
-                            reply.setContentObject(msg);
+                            reply.setContentObject(bikeInfo);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-
                         myAgent.send(reply);
 
+                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  reply.getSender().getLocalName() + "\t: STATIONBIKEDEVOLUTION-REPLY (" + bikeInfo.bike + ")");
                     }
                 }
                 else {
@@ -155,59 +158,7 @@ public class Station extends Agent {
                 }
             }
         });
-
-        // listen for requests or devolution
-//        addBehaviour(new CyclicBehaviour(this) {
-//            @Override
-//            public void action() {
-//                ACLMessage receivedMessage = myAgent.receive();
-//                if (receivedMessage != null) {
-//
-//                    // create reply
-//                    ACLMessage reply = receivedMessage.createReply();
-//                    String ontology = receivedMessage.getOntology();
-//                    String content = receivedMessage.getContent();
-//
-//
-//
-//                    if (ontology.equalsIgnoreCase("BIKEREQUEST")) {
-//                        System.out.println("Bike allocated to "+ receivedMessage.getSender().getName() + "!"
-//                                              +"---message from "+ myAgent.getAID().getLocalName()  );
-//
-//                        reply.setPerformative(ACLMessage.INFORM);
-//                        reply.setOntology("BIKEREQUEST-REPLY");
-//                        reply.setContent(bikes.peek());
-//                        bikes.remove();
-//                        myAgent.send(reply);
-//
-//                    } else if (ontology.equalsIgnoreCase("BIKEDEVOLUTION")) {
-//                        System.out.println("Bike returned successfully by "+ receivedMessage.getSender().getName()  +"!"
-//                                                     +"---message from "+ myAgent.getAID().getLocalName()  );
-//
-//                        reply.setPerformative(ACLMessage.INFORM);
-//                        reply.setOntology("BIKEDEVOLUTION-REPLY");
-//                        reply.setContent("Devolution accepted.");
-//                        myAgent.send(reply);
-//                    }
-//                    else {
-//                        // TODO the problem is right here, this behaviour is catching messages from another one
-//                        System.out.println(content +"---message from "+ myAgent.getAID().getLocalName());
-//                        block();
-//                    }
-//                }
-//                else {
-//                    block();
-//                }
-//            }
-//        });
-
     }
-
-
-
-
-
-
 
     // DF registration
     protected void registerService(ServiceDescription sd) {

@@ -31,12 +31,11 @@ public class Main {
         for (String station: stationParser.getTerminals()) {
             AgentController stationAgentController;
             try {
-                String[] argsStation = new String[5];
-                argsStation[0] = station;
-                argsStation[1] = stationParser.getData(station, "name");
-                argsStation[2] = stationParser.getData(station, "dockcount");
-                argsStation[3] = stationParser.getData(station, "lat");
-                argsStation[4] = stationParser.getData(station, "long");
+                String[] argsStation = new String[4];
+                argsStation[0] = stationParser.getData(station, "name");
+                argsStation[1] = stationParser.getData(station, "dockcount");
+                argsStation[2] = stationParser.getData(station, "lat");
+                argsStation[3] = stationParser.getData(station, "long");
 
                 stationAgentController = containerController.createNewAgent(station, "Station", argsStation);
                 stationAgentController.start();
@@ -47,10 +46,10 @@ public class Main {
 
 
 
-        String[] argsUser = new String[] {"Helder","UW-04","1.645","5.9897","5000"};
+        String[] argsUser = new String[] {"UW-04","1.645","5.9897","5000"};
 
         try {
-            AgentController userAgentController = containerController.createNewAgent("helder", "User", argsUser);
+            AgentController userAgentController = containerController.createNewAgent("Helder", "User", argsUser);
             userAgentController.start();
         } catch (StaleProxyException e) {
             e.printStackTrace();
