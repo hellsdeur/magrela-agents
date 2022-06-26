@@ -94,6 +94,8 @@ public class Central extends Agent {
 
                                 if (distanceFromIdeal<(bikeCountStation - idealNumBikes)) {
                                     selectedStation = station;
+                                    distanceFromIdeal = bikeCountStation - idealNumBikes;
+
                                 }
 
                             }
