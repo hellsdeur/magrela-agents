@@ -113,8 +113,17 @@ public class Station extends Agent {
                             throw new RuntimeException(e);
                         }
 
-                        InfoBike infoBikeReply = new InfoBike(bikes.peek(), recvMessage.getSender().getLocalName(), getAID().getLocalName());
-                        bikes.remove();
+                        String bikeToSend;
+
+                        if (bikes.size() == 0) {
+                            bikeToSend = null;
+                        }
+                        else {
+                            bikeToSend = bikes.peek();
+                            bikes.remove();
+                        }
+
+                        InfoBike infoBikeReply = new InfoBike(bikeToSend, recvMessage.getSender().getLocalName(), getAID().getLocalName());
 
                         reply.setPerformative(ACLMessage.INFORM);
                         reply.setOntology("BIKEREQUEST-REPLY");
@@ -162,7 +171,6 @@ public class Station extends Agent {
                         myAgent.send(message);
                     }
                     else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES")) {
-                        System.out.println("recebi msg de realocação "+ myAgent.getLocalName());
 
                         InfoReallocate infoReallocate = null;
                         try {
@@ -172,6 +180,8 @@ public class Station extends Agent {
                         }
 
                         InfoBikeBatch bikesSent = new InfoBikeBatch();
+
+                        System.out.println(myAgent.getLocalName() + " QUANTIDADE PARA REALOCAR: " + infoReallocate.sendNumBikes);
 
                         for (int i = 0; i < infoReallocate.sendNumBikes; i++){
                             bikesSent.bikes.add(bikes.peek());

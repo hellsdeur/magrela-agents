@@ -93,9 +93,42 @@ public class User extends Agent{
                             throw new RuntimeException(e);
                         }
 
-                        bike[0] = infoBike.bike;
+                        if (infoBike.bike == null) {
+                             // TODO function to ask for a station
 
-                        System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + infoBike.bike + " at " + infoBike.station);
+                            InfoUser infoUser = new InfoUser(null, fromLatitude, fromLongitude);
+                            ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+                            AID receiver = new AID("Central", AID.ISLOCALNAME);
+                            message.addReceiver(receiver);
+                            message.setOntology("RENTALSTATIONREQUEST");
+                            try {
+                                message.setContentObject(infoUser);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            myAgent.send(message);
+
+                            System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: RENTALSTATIONREQUEST");
+                        }
+                        else {
+                            bike[0] = infoBike.bike;
+                            System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + infoBike.bike + " at " + infoBike.station);
+
+                            // Waker
+                            InfoUser infoUser = new InfoUser(bike[0], toLatitude, toLongitude);
+                            ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+                            AID receiver = new AID("Central", AID.ISLOCALNAME);
+                            message.addReceiver(receiver);
+                            message.setOntology("DEVOLUTIONSTATIONREQUEST");
+                            try {
+                                message.setContentObject(infoUser);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                            myAgent.send(message);
+
+                            System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: DEVOLUTIONSTATIONREQUEST");
+                        }
                     }
                     // if DEVOLUTIONSTATIONREQUEST-REPLY, then
                     else if (recvMessage.getOntology().equalsIgnoreCase("DEVOLUTIONSTATIONREQUEST-REPLY")) {
@@ -145,25 +178,25 @@ public class User extends Agent{
         });
 
         // bike devolution behaviour
-        addBehaviour(new WakerBehaviour(this, delay) {
-            @Override
-            protected void onWake() {
-                // user returns bike to a station
-
-                InfoUser infoUser = new InfoUser(bike[0], toLatitude, toLongitude);
-                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
-                AID receiver = new AID("Central", AID.ISLOCALNAME);
-                message.addReceiver(receiver);
-                message.setOntology("DEVOLUTIONSTATIONREQUEST");
-                try {
-                    message.setContentObject(infoUser);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                myAgent.send(message);
-
-                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: DEVOLUTIONSTATIONREQUEST");
-            }
-        });
+//        addBehaviour(new WakerBehaviour(this, delay) {
+//            @Override
+//            protected void onWake() {
+//                // user returns bike to a station
+//
+//                InfoUser infoUser = new InfoUser(bike[0], toLatitude, toLongitude);
+//                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+//                AID receiver = new AID("Central", AID.ISLOCALNAME);
+//                message.addReceiver(receiver);
+//                message.setOntology("DEVOLUTIONSTATIONREQUEST");
+//                try {
+//                    message.setContentObject(infoUser);
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//                myAgent.send(message);
+//
+//                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: DEVOLUTIONSTATIONREQUEST");
+//            }
+//        });
     }
 }
