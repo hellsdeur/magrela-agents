@@ -161,6 +161,75 @@ public class Station extends Agent {
                         }
                         myAgent.send(message);
                     }
+                    else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES")) {
+                        System.out.println("recebi msg de realocação "+ myAgent.getLocalName());
+
+                        InfoReallocate infoReallocate = null;
+                        try {
+                            infoReallocate = (InfoReallocate) recvMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        InfoBikeBatch bikesSent = new InfoBikeBatch();
+
+                        for (int i = 0; i < infoReallocate.sendNumBikes; i++){
+                            bikesSent.bikes.add(bikes.peek());
+                            bikes.remove();
+                        }
+
+                        ACLMessage sendingBikes = new ACLMessage(ACLMessage.INFORM);
+
+                        sendingBikes.addReceiver(new AID(infoReallocate.station, AID.ISLOCALNAME));
+                        sendingBikes.setOntology("REALLOCATEBIKES-REPLY");
+                        try {
+                            sendingBikes.setContentObject(bikesSent);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        myAgent.send(sendingBikes);
+
+
+                        InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
+                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+                        message.setOntology("UPDATESTATIONSINFO");
+                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
+                        try {
+                            message.setContentObject(infoStation);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        myAgent.send(message);
+
+                    } else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES-REPLY")){
+                        System.out.println("recebi bike "+ myAgent.getLocalName());
+
+                        InfoBikeBatch infoBikes = null;
+                        try {
+                            infoBikes = (InfoBikeBatch) recvMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        while (infoBikes.bikes.size() > 0){
+                            bikes.add(infoBikes.bikes.peek());
+                            infoBikes.bikes.remove();
+                        }
+
+
+                        InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
+                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+                        message.setOntology("UPDATESTATIONSINFO");
+                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
+                        try {
+                            message.setContentObject(infoStation);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        myAgent.send(message);
+
+                    }
                 }
                 else {
                     block();

@@ -72,9 +72,48 @@ public class Central extends Agent {
                         try {
                             infoStation = (InfoStation) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
-                            throw  new RuntimeException(e);
+                            throw new RuntimeException(e);
                         }
                         stations.put(sender.getLocalName(), infoStation);
+
+                        //TODO se a estação possuir 0 bikes, enviar para ela mais bikes
+
+                        if (infoStation.bikeCount == 0){
+                            String selectedStation = null;
+
+                            int distanceFromIdeal = 0;
+
+                            for (String station : stations.keySet()) {
+                                InfoStation info = stations.get(station);
+
+                                float ratioDocks = (float) info.dockcount / numDocks;
+                                int idealNumBikes = Math.round(ratioDocks * bikes.size());
+                                int bikeCountStation = info.bikeCount;
+
+
+
+                                if (distanceFromIdeal<(bikeCountStation - idealNumBikes)) {
+                                    selectedStation = station;
+                                }
+
+                            }
+
+                            if (selectedStation != null) {
+                                ACLMessage sendBikesToAnotherStation = new ACLMessage(ACLMessage.REQUEST);
+                                sendBikesToAnotherStation.addReceiver(new AID(selectedStation, AID.ISLOCALNAME));
+                                sendBikesToAnotherStation.setOntology("REALLOCATEBIKES");
+
+                                InfoReallocate content = new InfoReallocate(infoStation.station, infoStation.address, distanceFromIdeal);
+
+                                try {
+                                    sendBikesToAnotherStation.setContentObject(content);
+                                } catch (IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                myAgent.send(sendBikesToAnotherStation);
+
+                            }
+                        }
                     }
                     // if RENTALSTATIONREQUEST, then select closest station and send a RENTALSTATION
                     else if (recvMessage.getOntology().equalsIgnoreCase("RENTALSTATIONREQUEST")) {
@@ -89,7 +128,7 @@ public class Central extends Agent {
 
                         String closestStation = null;
                         double shortestDistance = Double.MAX_VALUE;
-
+                        // TODO verificar se a estação possui bikes
                         for (Map.Entry<String, InfoStation> entry : stations.entrySet()) {
                             double currentDistance = Point2D.distance(infoUser.latitude, infoUser.longitude, entry.getValue().latitude, entry.getValue().longitude);
                             if (currentDistance < shortestDistance) {
