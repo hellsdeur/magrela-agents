@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.Map;
+import java.util.*;
 
 public class Central extends Agent {
 
@@ -79,9 +80,10 @@ public class Central extends Agent {
 
                             stations.put(sender.getLocalName(), infoStation);
 
-                            //TODO se a estação possuir 0 bikes, enviar para ela mais bikes
+                            //TODO identificar o erro
 
                             if (infoStation.bikeCount == 0) {
+
                                 String selectedStation = null;
 
                                 int distanceFromIdeal = 0;
