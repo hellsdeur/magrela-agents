@@ -212,19 +212,20 @@ public class Station extends Agent {
                         }
                         myAgent.send(message);
 
-                    } else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES-REPLY")){
+                    }
+                    else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES-REPLY")){
                         System.out.println("recebi bike "+ myAgent.getLocalName());
 
-                        InfoBikeBatch infoBikes = null;
+                        InfoBikeBatch infoBikeBatch = null;
                         try {
-                            infoBikes = (InfoBikeBatch) recvMessage.getContentObject();
+                            infoBikeBatch = (InfoBikeBatch) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
                             throw new RuntimeException(e);
                         }
 
-                        while (infoBikes.bikes.size() > 0){
-                            bikes.add(infoBikes.bikes.peek());
-                            infoBikes.bikes.remove();
+                        while (infoBikeBatch.bikes.size() > 0){
+                            bikes.add(infoBikeBatch.bikes.peek());
+                            infoBikeBatch.bikes.remove();
                         }
 
 
