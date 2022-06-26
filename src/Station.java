@@ -51,7 +51,7 @@ public class Station extends Agent {
             public void action() {
                 // station requests bikes from central
 
-                InfoStation infoStation = new InfoStation(latitude, longitude, bikes.size(), dockcount);
+                InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
                 ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
                 AID receiver = new AID("Central", AID.ISLOCALNAME);
                 message.addReceiver(receiver);
@@ -88,9 +88,9 @@ public class Station extends Agent {
 
                         ACLMessage reply = recvMessage.createReply();
 
-                        InfoStation infoStation = new InfoStation(latitude, longitude, bikes.size(), dockcount);
+                        InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
                         reply.setPerformative(ACLMessage.CONFIRM);
-                        reply.setOntology("RECEIVEBIKE-CONFIRMATION");
+                        reply.setOntology("UPDATESTATIONSINFO");
                         try {
                             reply.setContentObject(infoStation);
                         } catch (IOException e) {
@@ -98,26 +98,26 @@ public class Station extends Agent {
                         }
                         myAgent.send(reply);
 
-                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: RECEIVEBIKE-CONFIRMATION (" + infoBikeBatch.bikes.size() + " bikes)");
+                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: UPDATESTATIONSINFO-CONFIRMATION (" + infoBikeBatch.bikes.size() + " bikes)");
 
                     }
                     // if STATIONBIKEREQUEST, unpack request and send bike to user
-                    else if (recvMessage.getOntology().equalsIgnoreCase("STATIONBIKEREQUEST")) {
+                    else if (recvMessage.getOntology().equalsIgnoreCase("BIKEREQUEST")) {
 
                         ACLMessage reply = recvMessage.createReply();
 
-                        InfoBike infoBikeRequest = null;
+                        InfoUser infoUser = null;
                         try {
-                            infoBikeRequest = (InfoBike) recvMessage.getContentObject();
+                            infoUser = (InfoUser) recvMessage.getContentObject();
                         } catch (UnreadableException e) {
                             throw new RuntimeException(e);
                         }
 
-                        InfoBike infoBikeReply = new InfoBike(bikes.peek(), infoBikeRequest.user, infoBikeRequest.station);
+                        InfoBike infoBikeReply = new InfoBike(bikes.peek(), recvMessage.getSender().getLocalName(), getAID().getLocalName());
                         bikes.remove();
 
                         reply.setPerformative(ACLMessage.INFORM);
-                        reply.setOntology("STATIONBIKEREQUEST-REPLY");
+                        reply.setOntology("BIKEREQUEST-REPLY");
                         try {
                             reply.setContentObject(infoBikeReply);
                         } catch (IOException e) {
@@ -125,13 +125,22 @@ public class Station extends Agent {
                         }
                         myAgent.send(reply);
 
-                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: STATIONBIKEREQUEST-REPLY (" + infoBikeReply.bike + ")");
+                        InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
+                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+                        message.setOntology("UPDATESTATIONSINFO");
+                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
+                        try {
+                            message.setContentObject(infoStation);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        myAgent.send(message);
+
+                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: BIKEREQUEST-REPLY (" + infoBikeReply.bike + ")");
 
                     }
-                    // if STATIONBIKEDEVOLUTION, then unpack bikeInfo
-                    else if (recvMessage.getOntology().equalsIgnoreCase("STATIONBIKEDEVOLUTION")) {
-
-                        ACLMessage reply = recvMessage.createReply();
+                    // if BIKEDEVOLUTION, then unpack bikeInfo
+                    else if (recvMessage.getOntology().equalsIgnoreCase("BIKEDEVOLUTION")) {
 
                         InfoBike infoBike = null;
                         try {
@@ -141,16 +150,16 @@ public class Station extends Agent {
                         }
                         bikes.add(infoBike.bike);
 
-                        reply.setPerformative(ACLMessage.INFORM);
-                        reply.setOntology("STATIONBIKEDEVOLUTION-REPLY");
+                        InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
+                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
+                        message.setOntology("UPDATESTATIONSINFO");
+                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
                         try {
-                            reply.setContentObject(infoBike);
+                            message.setContentObject(infoStation);
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
-                        myAgent.send(reply);
-
-                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  reply.getSender().getLocalName() + "\t: STATIONBIKEDEVOLUTION-REPLY (" + infoBike.bike + ")");
+                        myAgent.send(message);
                     }
                 }
                 else {

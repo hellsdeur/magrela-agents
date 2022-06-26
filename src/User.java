@@ -32,12 +32,12 @@ public class User extends Agent{
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
-                // user requests bike to the central
+                // user requests a station name to the central
                 InfoUser infoUser = new InfoUser(null, fromLatitude, fromLongitude);
                 ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
                 AID receiver = new AID("Central", AID.ISLOCALNAME);
                 message.addReceiver(receiver);
-                message.setOntology("BIKEREQUEST");
+                message.setOntology("RENTALSTATIONREQUEST");
                 try {
                     message.setContentObject(infoUser);
                 } catch (IOException e) {
@@ -45,7 +45,7 @@ public class User extends Agent{
                 }
                 myAgent.send(message);
 
-                System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: BIKEREQUEST");
+                System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: RENTALSTATIONREQUEST");
             }
         });
 
@@ -57,8 +57,33 @@ public class User extends Agent{
                 ACLMessage recvMessage = myAgent.receive();
 
                 if (recvMessage != null) {
+                    // if RENTALSTATIONREQUEST-REPLY, then request bike on the given station and send a BIKEREQUEST
+                    if (recvMessage.getOntology().equalsIgnoreCase("RENTALSTATIONREQUEST-REPLY")) {
+
+                        InfoStation infoStation = null;
+
+                        try {
+                            infoStation = (InfoStation) recvMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        InfoUser infoUser = new InfoUser(null, fromLatitude, fromLongitude);
+                        ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+                        AID receiver = new AID(infoStation.station, AID.ISLOCALNAME);
+                        message.addReceiver(receiver);
+                        message.setOntology("BIKEREQUEST");
+                        try {
+                            message.setContentObject(infoUser);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        myAgent.send(message);
+
+                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: BIKEREQUEST");
+                    }
                     // if BIKEREQUEST-REPLY, then unpack bikeInfo and give bike to the user
-                    if (recvMessage.getOntology().equalsIgnoreCase("BIKEREQUEST-REPLY")) {
+                    else if (recvMessage.getOntology().equalsIgnoreCase("BIKEREQUEST-REPLY")) {
 
                         InfoBike infoBike = null;
 
@@ -71,6 +96,31 @@ public class User extends Agent{
                         bike[0] = infoBike.bike;
 
                         System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + infoBike.bike + " at " + infoBike.station);
+                    }
+                    // if DEVOLUTIONSTATIONREQUEST-REPLY, then
+                    else if (recvMessage.getOntology().equalsIgnoreCase("DEVOLUTIONSTATIONREQUEST-REPLY")) {
+                        InfoStation infoStation = null;
+
+                        try {
+                            infoStation = (InfoStation) recvMessage.getContentObject();
+                        } catch (UnreadableException e) {
+                            throw new RuntimeException(e);
+                        }
+
+                        InfoBike infoBike = new InfoBike(bike[0], getAID().getLocalName(), infoStation.station);
+                        ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
+                        AID receiver = new AID(infoStation.station, AID.ISLOCALNAME);
+                        message.addReceiver(receiver);
+                        message.setOntology("BIKEDEVOLUTION");
+                        try {
+                            message.setContentObject(infoBike);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                        myAgent.send(message);
+                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + bike[0] + " at " + infoStation.station);
+                        bike[0] = null;
+
                     }
                     // if BIKEDEVOLUTION-REPLY, then unpack bikeInfo and retrieve bike from the user
                     else if (recvMessage.getOntology().equalsIgnoreCase("BIKEDEVOLUTION-REPLY")) {
@@ -104,7 +154,7 @@ public class User extends Agent{
                 ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
                 AID receiver = new AID("Central", AID.ISLOCALNAME);
                 message.addReceiver(receiver);
-                message.setOntology("BIKEDEVOLUTION");
+                message.setOntology("DEVOLUTIONSTATIONREQUEST");
                 try {
                     message.setContentObject(infoUser);
                 } catch (IOException e) {
@@ -112,7 +162,7 @@ public class User extends Agent{
                 }
                 myAgent.send(message);
 
-                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: BIKEDEVOLUTION");
+                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: DEVOLUTIONSTATIONREQUEST");
             }
         });
     }
