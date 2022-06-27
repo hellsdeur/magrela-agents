@@ -18,16 +18,16 @@ public class MainStations {
 
         ContainerController containerController = runtime.createAgentContainer(profile);
 
-        ParserStation parserStation = new ParserStation("data/stations.csv", new String[] {"terminal", "name", "lat", "long", "dockcount"});
+        ParserMap parserMap = new ParserMap("data/stations.csv", new String[] {"terminal", "address", "lat", "long", "dockcount"});
 
-        for (String station: parserStation.getTerminals()) {
+        for (String station: parserMap.getNames()) {
             AgentController stationAgentController;
             try {
                 String[] argsStation = new String[4];
-                argsStation[0] = parserStation.getData(station, "name");
-                argsStation[1] = parserStation.getData(station, "dockcount");
-                argsStation[2] = parserStation.getData(station, "lat");
-                argsStation[3] = parserStation.getData(station, "long");
+                argsStation[0] = parserMap.getData(station, "address");
+                argsStation[1] = parserMap.getData(station, "dockcount");
+                argsStation[2] = parserMap.getData(station, "lat");
+                argsStation[3] = parserMap.getData(station, "long");
 
                 stationAgentController = containerController.createNewAgent(station, "Station", argsStation);
                 stationAgentController.start();

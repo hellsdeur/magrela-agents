@@ -5,6 +5,8 @@ import jade.lang.acl.UnreadableException;
 import jade.util.leap.Serializable;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class ProntoAgent extends Agent {
 
@@ -24,7 +26,14 @@ public class ProntoAgent extends Agent {
         myAgent.send(message);
 
         if (print) {
-            System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: " + ontology);
+            String senderName = myAgent.getLocalName();
+            int spacesSender = 1;
+            if (myAgent instanceof Station) spacesSender = 7 - senderName.length();
+            else if (myAgent instanceof User) spacesSender = 11 - senderName.length();
+            String receivName = receiver.getLocalName();
+            int spacesReceiv = 11 - receivName.length();
+
+            System.out.println("✉ [MES] " + senderName + " ".repeat(spacesSender) + "→ " +  receivName + " ".repeat(spacesReceiv) + ": " + ontology);
         }
     }
 
@@ -37,7 +46,14 @@ public class ProntoAgent extends Agent {
         myAgent.send(message);
 
         if (print) {
-            System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: " + ontology);
+            String senderName = myAgent.getLocalName();
+            int spacesSender = 1; // central, max 7 chars
+            if (myAgent instanceof Station) spacesSender = 7 - senderName.length(); // station, max 6 chars
+            else if (myAgent instanceof User) spacesSender = 11 - senderName.length(); // user, max 10 chars
+            String receivName = receiver.getLocalName();
+            int spacesReceiv = 11 - receivName.length();
+
+            System.out.println("✉ [MES] " + senderName + " ".repeat(spacesSender) + "→ " +  receivName + " ".repeat(spacesReceiv) + ": " + ontology);
         }
     }
 
@@ -74,7 +90,14 @@ public class ProntoAgent extends Agent {
         myAgent.send(messageReply);
 
         if (print) {
-            System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: " + ontology);
+            String senderName = myAgent.getLocalName();
+            int spacesSender = 1;
+            if (myAgent instanceof Station) spacesSender = 7 - senderName.length();
+            else if (myAgent instanceof User) spacesSender = 11 - senderName.length();
+            String receivName = receiver.getLocalName();
+            int spacesReceiv = 11 - receivName.length();
+
+            System.out.println("✉ [MES] " + senderName + " ".repeat(spacesSender) + "→ " +  receivName + " ".repeat(spacesReceiv) + ": " + ontology);
         }
 
         return serializable;
@@ -97,7 +120,14 @@ public class ProntoAgent extends Agent {
         myAgent.send(messageReply);
 
         if (print) {
-            System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: " + ontology);
+            String senderName = myAgent.getLocalName();
+            int spacesSender = 1;
+            if (myAgent instanceof Station) spacesSender = 7 - senderName.length();
+            else if (myAgent instanceof User) spacesSender = 11 - senderName.length();
+            String receivName = receiver.getLocalName();
+            int spacesReceiv = 11 - receivName.length();
+
+            System.out.println("✉ [MES] " + senderName + " ".repeat(spacesSender) + "→ " +  receivName + " ".repeat(spacesReceiv) + ": " + ontology);
         }
 
         return serializable;

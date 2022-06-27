@@ -1,4 +1,4 @@
-terminal,name,lat,long,dockcount
+name,address,lat,long,dockcount
 BT-01,3rd Ave & Broad St,47.618418,-122.350964,18
 BT-03,2nd Ave & Vine St,47.615829,-122.348564,16
 BT-04,6th Ave & Blanchard St,47.616094,-122.341102,16

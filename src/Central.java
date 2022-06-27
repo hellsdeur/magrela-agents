@@ -1,16 +1,12 @@
 import jade.core.AID;
-import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.UnreadableException;
 
 import java.awt.geom.Point2D;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.Map;
-import java.util.*;
 
 public class Central extends ProntoAgent {
 
@@ -22,7 +18,7 @@ public class Central extends ProntoAgent {
     @Override
     protected void setup() {
         Object[] param = getArguments();
-        this.bikes = new ParserBike(param[0].toString()).bikes;
+        this.bikes = new ParserQueue(param[0].toString()).queue;
         this.totalBikeCount = bikes.size();
         this.numDocks = Integer.parseInt(param[1].toString());
 
@@ -30,7 +26,7 @@ public class Central extends ProntoAgent {
         addBehaviour(new OneShotBehaviour() {
             @Override
             public void action() {
-                System.out.println("✓ [AGENT CREATED] Central " + getAID().getLocalName());
+                System.out.println("✓ [NEW] Central " + getAID().getLocalName());
             }
         });
 
@@ -75,10 +71,7 @@ public class Central extends ProntoAgent {
 
                                 stations.put(sender.getLocalName(), infoStation);
 
-                                //TODO identificar o erro
-
                                 if (stations.get(sender.getLocalName()).bikeCount == 0) {
-                                    System.out.println("Station "+ sender.getLocalName() +" need more bikes");
 
                                     String selectedStation = null;
 
@@ -94,16 +87,13 @@ public class Central extends ProntoAgent {
                                         if (distanceFromIdeal < (bikeCountStation - idealNumBikes)) {
                                             selectedStation = station;
                                             distanceFromIdeal = bikeCountStation - idealNumBikes;
-                                            //System.out.println("estação da vez " + selectedStation + "/bikes enviadas:"+ distanceFromIdeal);
                                         }
                                     }
 
-
                                     if (selectedStation != null) {
-                                        System.out.println("Sending request to "+ selectedStation + ": send " + distanceFromIdeal + " bike(s) to " + infoStation.station);
 
                                         InfoReallocate infoReallocate = new InfoReallocate(infoStation.station, infoStation.address, distanceFromIdeal);
-                                        send(myAgent, selectedStation, ACLMessage.REQUEST, "REALLOCATEBIKES", infoReallocate, false);
+                                        send(myAgent, selectedStation, ACLMessage.REQUEST, "REALLOCATEBIKES", infoReallocate, true);
 
                                     }
                                 }

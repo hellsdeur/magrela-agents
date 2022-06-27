@@ -46,7 +46,7 @@ public class Station extends ProntoAgent {
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
-                System.out.println("✓ [AGENT CREATED] Station " + getAID().getLocalName());
+                System.out.println("✓ [NEW] Station " + getAID().getLocalName());
             }
         });
 
@@ -78,20 +78,14 @@ public class Station extends ProntoAgent {
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
 
-                        send(myAgent, "Central", ACLMessage.CONFIRM, "UPDATESTATIONSINFO", infoStation, true);
+                        send(myAgent, "Central", ACLMessage.CONFIRM, "UPDATESTATIONSINFO", infoStation, false);
+
+                        System.out.println("⥮ [ALC] " + myAgent.getLocalName() + "\t❮❮❮ " + infoBikeBatch.bikes.size() + "\t\uD83D\uDEB2 ❮❮❮ " + recvMessage.getSender().getLocalName());
 
                     }
                     // if BIKEREQUEST, unpack request and send bike to user
                     else if (recvMessage.getOntology().equalsIgnoreCase("BIKEREQUEST")) {
 
-//                        ACLMessage reply = recvMessage.createReply();
-//
-//                        InfoUser infoUser = null;
-//                        try {
-//                            infoUser = (InfoUser) recvMessage.getContentObject();
-//                        } catch (UnreadableException e) {
-//                            throw new RuntimeException(e);
-//                        }
                         InfoUser infoUser = (InfoUser) unpack(recvMessage);
 
                         String bikeToSend = null;
@@ -123,7 +117,7 @@ public class Station extends ProntoAgent {
 
                         InfoReallocate infoReallocate = (InfoReallocate) unpack(recvMessage);
 
-                        System.out.println("⥮ [REALLOCATION] " + myAgent.getLocalName() + " sent " + infoReallocate.sendNumBikes + " bikes to " + infoReallocate.station);
+//                        System.out.println("⥮[ALC] " + myAgent.getLocalName() + " ❯❯❯ " + infoReallocate.sendNumBikes + " \uD83D\uDEB2 ❯❯❯ " + infoReallocate.station);
 
                         InfoBikeBatch infoBikeBatch = new InfoBikeBatch();
 
@@ -141,7 +135,7 @@ public class Station extends ProntoAgent {
 
                         InfoBikeBatch infoBikeBatch = (InfoBikeBatch) unpack(recvMessage);
 
-                        System.out.println("⥮ [REALLOCATION] " + myAgent.getLocalName() + " received " + infoBikeBatch.bikes.size() + " bikes from " + recvMessage.getSender().getLocalName());
+                        System.out.println("⥮ [ALC] " + myAgent.getLocalName() + "\t❮❮❮ " + infoBikeBatch.bikes.size() + "\t\uD83D\uDEB2 ❮❮❮ " + recvMessage.getSender().getLocalName());
 
                         bikes.addAll(infoBikeBatch.bikes);
 

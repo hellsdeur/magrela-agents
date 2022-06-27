@@ -7,6 +7,7 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class User extends ProntoAgent {
 
@@ -14,8 +15,9 @@ public class User extends ProntoAgent {
     double fromLongitude;
     double toLatitude;
     double toLongitude;
-    int delay;
     String bike;
+
+    int delay;
 
     @Override
     protected void setup() {
@@ -31,7 +33,7 @@ public class User extends ProntoAgent {
         addBehaviour(new OneShotBehaviour(this) {
             @Override
             public void action() {
-                System.out.println("✓ [AGENT CREATED] User " + getAID().getLocalName());
+                System.out.println("✓ [NEW] User " + getAID().getLocalName());
             }
         });
 
@@ -73,17 +75,23 @@ public class User extends ProntoAgent {
                             InfoUser infoUser = new InfoUser(myAgent.getLocalName(), null, fromLatitude, fromLongitude);
                             send(myAgent, "Central", ACLMessage.REQUEST, "RENTALSTATIONREQUEST", infoUser, true);
                         }
-                        // if bike was received, get bike
+                        // if bike was received, get bike, sleep according to delay, then return
                         else {
                             bike = infoBike.bike;
-                            System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + infoBike.bike + " at " + infoBike.station);
+                            System.out.println("↑ [REN] " + myAgent.getLocalName() + " ".repeat(11 - myAgent.getLocalName().length()) + "received \uD83D\uDEB2 " + infoBike.bike + " @ " +  infoBike.station);
+
+                            // wait here
+                            try {
+                                TimeUnit.MILLISECONDS.sleep(delay);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
 
                             // waker behaviour moved here
                             InfoUser infoUser = new InfoUser(myAgent.getLocalName(), bike, toLatitude, toLongitude);
                             send(myAgent, "Central", ACLMessage.REQUEST, "DEVOLUTIONSTATIONREQUEST", infoUser, true);
                         }
                     }
-                    // TODO check which devolution is correct
                     // if DEVOLUTIONSTATIONREQUEST-REPLY, then
                     else if (recvMessage.getOntology().equalsIgnoreCase("DEVOLUTIONSTATIONREQUEST-REPLY")) {
 
@@ -93,18 +101,12 @@ public class User extends ProntoAgent {
 
                         send(myAgent, infoStation.station, ACLMessage.INFORM, "BIKEDEVOLUTION", infoBike, false);
 
-                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + bike + " at " + infoStation.station);
-                        bike = null;
-
-                    }
-                    // if BIKEDEVOLUTION-REPLY, then unpack bikeInfo and retrieve bike from the user
-                    else if (recvMessage.getOntology().equalsIgnoreCase("BIKEDEVOLUTION-REPLY")) {
-
-                        InfoBike infoBike = (InfoBike) unpack(recvMessage);
+                        System.out.println("↓ [DEV] " + myAgent.getLocalName() + " ".repeat(11 - myAgent.getLocalName().length()) + "returned \uD83D\uDEB2 " + infoBike.bike + " @ " +  infoBike.station);
 
                         bike = null;
 
-                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + infoBike.bike + " at " + infoBike.station);
+                        myAgent.doDelete();
+
                     }
                 }
                 else {
@@ -112,27 +114,10 @@ public class User extends ProntoAgent {
                 }
             }
         });
-
-        // bike devolution behaviour
-//        addBehaviour(new WakerBehaviour(this, delay) {
-//            @Override
-//            protected void onWake() {
-//                // user returns bike to a station
-//
-//                InfoUser infoUser = new InfoUser(bike[0], toLatitude, toLongitude);
-//                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
-//                AID receiver = new AID("Central", AID.ISLOCALNAME);
-//                message.addReceiver(receiver);
-//                message.setOntology("DEVOLUTIONSTATIONREQUEST");
-//                try {
-//                    message.setContentObject(infoUser);
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//                myAgent.send(message);
-//
-//                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t→ " +  receiver.getLocalName() + "\t: DEVOLUTIONSTATIONREQUEST");
-//            }
-//        });
+    }
+    @Override
+    protected void takeDown() {
+        // Printout a dismissal message
+        System.out.println("✕ [DEL] User " + getAID().getLocalName());
     }
 }
