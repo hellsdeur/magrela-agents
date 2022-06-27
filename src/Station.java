@@ -1,3 +1,4 @@
+import com.sun.tools.javac.Main;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.CyclicBehaviour;
@@ -12,9 +13,7 @@ import jade.lang.acl.UnreadableException;
 import java.io.IOException;
 import java.util.*;
 
-
-public class Station extends Agent {
-
+public class Station extends ProntoAgent {
 
     @Override
     protected void setup() {
@@ -52,18 +51,7 @@ public class Station extends Agent {
                 // station requests bikes from central
 
                 InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                ACLMessage message = new ACLMessage(ACLMessage.REQUEST);
-                AID receiver = new AID("Central", AID.ISLOCALNAME);
-                message.addReceiver(receiver);
-                message.setOntology("BIKEALLOCATION");
-                try {
-                    message.setContentObject(infoStation);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                myAgent.send(message);
-
-                System.out.println("✉ [MESSAGE] " +  myAgent.getLocalName() + "\t → " +  receiver.getLocalName() + "\t: BIKEALLOCATION");
+                send(myAgent, "Central", ACLMessage.REQUEST, "BIKEALLOCATION", infoStation, true);
             }
         });
 
@@ -75,170 +63,84 @@ public class Station extends Agent {
                 ACLMessage recvMessage = myAgent.receive();
 
                 if (recvMessage != null) {
-                    // if BIKEALLOCATION-REPLY, then receive bikes and enqueue
+                    // if BIKEALLOCATION-REPLY, then receive bikes, enqueue bikes, and update central
                     if (recvMessage.getOntology().equalsIgnoreCase("BIKEALLOCATION-REPLY")){
 
-                        InfoBikeBatch infoBikeBatch = null;
-                        try {
-                            infoBikeBatch = (InfoBikeBatch) recvMessage.getContentObject();
-                        } catch (UnreadableException e) {
-                            throw new RuntimeException(e);
-                        }
+                        InfoBikeBatch infoBikeBatch = (InfoBikeBatch) unpack(recvMessage);
+
                         bikes.addAll(infoBikeBatch.bikes);
 
-                        ACLMessage reply = recvMessage.createReply();
-
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        reply.setPerformative(ACLMessage.CONFIRM);
-                        reply.setOntology("UPDATESTATIONSINFO");
-                        try {
-                            reply.setContentObject(infoStation);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        myAgent.send(reply);
 
-                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: UPDATESTATIONSINFO-CONFIRMATION (" + infoBikeBatch.bikes.size() + " bikes)");
+                        send(myAgent, "Central", ACLMessage.CONFIRM, "UPDATESTATIONSINFO", infoStation, true);
 
                     }
-                    // if STATIONBIKEREQUEST, unpack request and send bike to user
+                    // if BIKEREQUEST, unpack request and send bike to user
                     else if (recvMessage.getOntology().equalsIgnoreCase("BIKEREQUEST")) {
 
-                        ACLMessage reply = recvMessage.createReply();
+//                        ACLMessage reply = recvMessage.createReply();
+//
+//                        InfoUser infoUser = null;
+//                        try {
+//                            infoUser = (InfoUser) recvMessage.getContentObject();
+//                        } catch (UnreadableException e) {
+//                            throw new RuntimeException(e);
+//                        }
+                        InfoUser infoUser = (InfoUser) unpack(recvMessage);
 
-                        InfoUser infoUser = null;
-                        try {
-                            infoUser = (InfoUser) recvMessage.getContentObject();
-                        } catch (UnreadableException e) {
-                            throw new RuntimeException(e);
-                        }
+                        String bikeToSend = null;
 
-                        String bikeToSend;
-
-                        if (bikes.size() == 0) {
-                            bikeToSend = null;
-                        }
-                        else {
+                        if (bikes.size() > 0) {
                             bikeToSend = bikes.peek();
                             bikes.remove();
                         }
 
                         InfoBike infoBikeReply = new InfoBike(bikeToSend, recvMessage.getSender().getLocalName(), getAID().getLocalName());
-
-                        reply.setPerformative(ACLMessage.INFORM);
-                        reply.setOntology("BIKEREQUEST-REPLY");
-                        try {
-                            reply.setContentObject(infoBikeReply);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        myAgent.send(reply);
+                        send(myAgent, infoUser.name, ACLMessage.INFORM, "BIKEREQUEST-REPLY", infoBikeReply, true);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
-                        message.setOntology("UPDATESTATIONSINFO");
-                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
-                        try {
-                            message.setContentObject(infoStation);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        myAgent.send(message);
-
-                        System.out.println("✉ [MESSAGE] " + myAgent.getLocalName() + "\t → " +  recvMessage.getSender().getLocalName() + "\t: BIKEREQUEST-REPLY (" + infoBikeReply.bike + ")");
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, true);
 
                     }
                     // if BIKEDEVOLUTION, then unpack bikeInfo
                     else if (recvMessage.getOntology().equalsIgnoreCase("BIKEDEVOLUTION")) {
 
-                        InfoBike infoBike = null;
-                        try {
-                            infoBike = (InfoBike) recvMessage.getContentObject();
-                        } catch (UnreadableException e) {
-                            throw new RuntimeException(e);
-                        }
+                        InfoBike infoBike = (InfoBike) unpack(recvMessage);
                         bikes.add(infoBike.bike);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
-                        message.setOntology("UPDATESTATIONSINFO");
-                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
-                        try {
-                            message.setContentObject(infoStation);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        myAgent.send(message);
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, false);
+
                     }
+                    // if REALLOCATEBIKES, then send requested number of bikes, and update Central
                     else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES")) {
 
-                        InfoReallocate infoReallocate = null;
-                        try {
-                            infoReallocate = (InfoReallocate) recvMessage.getContentObject();
-                        } catch (UnreadableException e) {
-                            throw new RuntimeException(e);
-                        }
+                        InfoReallocate infoReallocate = (InfoReallocate) unpack(recvMessage);
 
-                        InfoBikeBatch bikesSent = new InfoBikeBatch();
+                        System.out.println("⥮ [REALLOCATION] " + myAgent.getLocalName() + " sent " + infoReallocate.sendNumBikes + " bikes to " + infoReallocate.station);
 
-                        System.out.println(myAgent.getLocalName() + " QUANTIDADE PARA REALOCAR: " + infoReallocate.sendNumBikes);
+                        InfoBikeBatch infoBikeBatch = new InfoBikeBatch();
 
-                        for (int i = 0; i < infoReallocate.sendNumBikes; i++){
-                            bikesSent.bikes.add(bikes.peek());
+                        for (int i = 0; i < infoReallocate.sendNumBikes; i++) {
+                            infoBikeBatch.bikes.add(bikes.peek());
                             bikes.remove();
                         }
-
-                        ACLMessage sendingBikes = new ACLMessage(ACLMessage.INFORM);
-
-                        sendingBikes.addReceiver(new AID(infoReallocate.station, AID.ISLOCALNAME));
-                        sendingBikes.setOntology("REALLOCATEBIKES-REPLY");
-                        try {
-                            sendingBikes.setContentObject(bikesSent);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-
-                        myAgent.send(sendingBikes);
-
+                        send(myAgent, infoReallocate.station, ACLMessage.INFORM, "REALLOCATEBIKES-REPLY", infoBikeBatch, false);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
-                        message.setOntology("UPDATESTATIONSINFO");
-                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
-                        try {
-                            message.setContentObject(infoStation);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        myAgent.send(message);
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, false);
 
                     }
                     else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES-REPLY")){
-                        System.out.println("recebi bike "+ myAgent.getLocalName());
 
-                        InfoBikeBatch infoBikeBatch = null;
-                        try {
-                            infoBikeBatch = (InfoBikeBatch) recvMessage.getContentObject();
-                        } catch (UnreadableException e) {
-                            throw new RuntimeException(e);
-                        }
+                        InfoBikeBatch infoBikeBatch = (InfoBikeBatch) unpack(recvMessage);
 
-                        while (infoBikeBatch.bikes.size() > 0){
-                            bikes.add(infoBikeBatch.bikes.peek());
-                            infoBikeBatch.bikes.remove();
-                        }
+                        System.out.println("⥮ [REALLOCATION] " + myAgent.getLocalName() + " received " + infoBikeBatch.bikes.size() + " bikes from " + recvMessage.getSender().getLocalName());
 
+                        bikes.addAll(infoBikeBatch.bikes);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        ACLMessage message = new ACLMessage(ACLMessage.INFORM);
-                        message.setOntology("UPDATESTATIONSINFO");
-                        message.addReceiver(new AID("Central", AID.ISLOCALNAME));
-                        try {
-                            message.setContentObject(infoStation);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                        myAgent.send(message);
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, false);
 
                     }
                 }
