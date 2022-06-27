@@ -15,14 +15,20 @@ import java.util.*;
 
 public class Station extends ProntoAgent {
 
+    String address;
+    int dockcount;
+    float latitude;
+    float longitude;
+    Queue<String> bikes = new LinkedList<String>();
+
     @Override
     protected void setup() {
         Object[] param = getArguments();
-        String address = param[0].toString();
-        int dockcount = Integer.parseInt(param[1].toString());
-        float latitude = Float.parseFloat(param[2].toString());
-        float longitude = Float.parseFloat(param[3].toString());
-        Queue<String> bikes = new LinkedList<String>();
+        address = param[0].toString();
+        dockcount = Integer.parseInt(param[1].toString());
+        latitude = Float.parseFloat(param[2].toString());
+        longitude = Float.parseFloat(param[3].toString());
+
 
         // create a bike rental service
 //        ServiceDescription sd = new ServiceDescription();

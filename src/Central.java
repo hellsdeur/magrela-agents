@@ -14,13 +14,18 @@ import java.util.*;
 
 public class Central extends ProntoAgent {
 
+    Queue<String> bikes;
+    int totalBikeCount;
+    int numDocks;
+    Map<String, InfoStation> stations = new HashMap<String, InfoStation>();
+
     @Override
     protected void setup() {
-        final Object[][] param = {getArguments()};
-        final Queue<String>[] bikes = new Queue[]{new ParserBike(param[0][0].toString()).bikes};
-        final int[] totalBikeCount = {bikes[0].size()};
-        int numDocks = Integer.parseInt(param[0][1].toString());
-        Map<String, InfoStation> stations = new HashMap<String, InfoStation>();
+        Object[] param = getArguments();
+        this.bikes = new ParserBike(param[0].toString()).bikes;
+        this.totalBikeCount = bikes.size();
+        this.numDocks = Integer.parseInt(param[1].toString());
+
 
         addBehaviour(new OneShotBehaviour() {
             @Override
@@ -42,12 +47,12 @@ public class Central extends ProntoAgent {
                         InfoStation infoStation = (InfoStation) unpack(recvMessage);
 
                         float ratioDocks = (float) infoStation.dockcount / numDocks;
-                        int numBikes = Math.round(ratioDocks * totalBikeCount[0]);
+                        int numBikes = Math.round(ratioDocks * totalBikeCount);
 
                         InfoBikeBatch infoBikeBatch = new InfoBikeBatch();
                         while (numBikes > 0) {
-                            infoBikeBatch.bikes.add(bikes[0].peek());
-                            bikes[0].remove();
+                            infoBikeBatch.bikes.add(bikes.peek());
+                            bikes.remove();
                             numBikes -= 1;
                         }
                         send(myAgent, recvMessage.getSender().getLocalName(), ACLMessage.INFORM, "BIKEALLOCATION-REPLY", infoBikeBatch, true);
@@ -66,7 +71,7 @@ public class Central extends ProntoAgent {
                         if (previousInfo != null)
                             if (infoStation.bikeCount != previousInfo.bikeCount) {
 
-                                totalBikeCount[0] = totalBikeCount[0] + (infoStation.bikeCount - previousInfo.bikeCount);
+                                totalBikeCount = totalBikeCount + (infoStation.bikeCount - previousInfo.bikeCount);
 
                                 stations.put(sender.getLocalName(), infoStation);
 
@@ -83,7 +88,7 @@ public class Central extends ProntoAgent {
                                         InfoStation info = stations.get(station);
 
                                         float ratioDocks = (float) info.dockcount / numDocks;
-                                        int idealNumBikes = Math.round(ratioDocks * totalBikeCount[0]);
+                                        int idealNumBikes = Math.round(ratioDocks * totalBikeCount);
                                         int bikeCountStation = info.bikeCount;
 
                                         if (distanceFromIdeal < (bikeCountStation - idealNumBikes)) {

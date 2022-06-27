@@ -10,15 +10,22 @@ import java.io.IOException;
 
 public class User extends ProntoAgent {
 
+    double fromLatitude;
+    double fromLongitude;
+    double toLatitude;
+    double toLongitude;
+    int delay;
+    String bike;
+
     @Override
     protected void setup() {
         Object[] param = getArguments();
-        double fromLatitude = Double.parseDouble(param[0].toString());
-        double fromLongitude = Double.parseDouble(param[1].toString());
-        double toLatitude = Double.parseDouble(param[2].toString());
-        double toLongitude = Double.parseDouble(param[3].toString());
-        int delay = Integer.parseInt(param[4].toString());
-        final String[] bike = new String[1];
+        fromLatitude = Double.parseDouble(param[0].toString());
+        fromLongitude = Double.parseDouble(param[1].toString());
+        toLatitude = Double.parseDouble(param[2].toString());
+        toLongitude = Double.parseDouble(param[3].toString());
+        delay = Integer.parseInt(param[4].toString());
+        bike = null;
 
         // confirmation print (might delete later)
         addBehaviour(new OneShotBehaviour(this) {
@@ -68,11 +75,11 @@ public class User extends ProntoAgent {
                         }
                         // if bike was received, get bike
                         else {
-                            bike[0] = infoBike.bike;
+                            bike = infoBike.bike;
                             System.out.println("↑ [RENTAL] " + myAgent.getLocalName() + " received " + infoBike.bike + " at " + infoBike.station);
 
                             // waker behaviour moved here
-                            InfoUser infoUser = new InfoUser(myAgent.getLocalName(), bike[0], toLatitude, toLongitude);
+                            InfoUser infoUser = new InfoUser(myAgent.getLocalName(), bike, toLatitude, toLongitude);
                             send(myAgent, "Central", ACLMessage.REQUEST, "DEVOLUTIONSTATIONREQUEST", infoUser, true);
                         }
                     }
@@ -82,12 +89,12 @@ public class User extends ProntoAgent {
 
                         InfoStation infoStation = (InfoStation) unpack(recvMessage);
 
-                        InfoBike infoBike = new InfoBike(bike[0], getAID().getLocalName(), infoStation.station);
+                        InfoBike infoBike = new InfoBike(bike, getAID().getLocalName(), infoStation.station);
 
                         send(myAgent, infoStation.station, ACLMessage.INFORM, "BIKEDEVOLUTION", infoBike, false);
 
-                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + bike[0] + " at " + infoStation.station);
-                        bike[0] = null;
+                        System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + bike + " at " + infoStation.station);
+                        bike = null;
 
                     }
                     // if BIKEDEVOLUTION-REPLY, then unpack bikeInfo and retrieve bike from the user
@@ -95,7 +102,7 @@ public class User extends ProntoAgent {
 
                         InfoBike infoBike = (InfoBike) unpack(recvMessage);
 
-                        bike[0] = null;
+                        bike = null;
 
                         System.out.println("↓ [DEVOLUTION] " + myAgent.getLocalName() + " returned " + infoBike.bike + " at " + infoBike.station);
                     }

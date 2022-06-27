@@ -6,7 +6,7 @@ Multiagents project for a bicycle management system.
 
 - [x] Ontologies for all messages
 - [x] Bike devolution for **EACH** and **ANY** station
-- [ ] Bike reallocation throughout the stations
+- [x] Bike reallocation throughout the stations
 - [ ] Yellow pages for rental and devolution services
 - [ ] White page for users that do not get on time
 - [x] User location hints which station to get bike
