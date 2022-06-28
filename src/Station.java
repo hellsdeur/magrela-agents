@@ -78,7 +78,7 @@ public class Station extends ProntoAgent {
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
 
-                        send(myAgent, "Central", ACLMessage.CONFIRM, "UPDATESTATIONSINFO", infoStation, false);
+                        send(myAgent, "Central", ACLMessage.CONFIRM, "UPDATESTATIONSINFO", infoStation, true);
 
                         System.out.println("⥮ [ALC] " + myAgent.getLocalName() + "\t❮❮❮ " + infoBikeBatch.bikes.size() + "\t\uD83D\uDEB2 ❮❮❮ " + recvMessage.getSender().getLocalName());
 
@@ -109,7 +109,7 @@ public class Station extends ProntoAgent {
                         bikes.add(infoBike.bike);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, false);
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, true);
 
                     }
                     // if REALLOCATEBIKES, then send requested number of bikes, and update Central
@@ -125,10 +125,10 @@ public class Station extends ProntoAgent {
                             infoBikeBatch.bikes.add(bikes.peek());
                             bikes.remove();
                         }
-                        send(myAgent, infoReallocate.station, ACLMessage.INFORM, "REALLOCATEBIKES-REPLY", infoBikeBatch, false);
+                        send(myAgent, infoReallocate.station, ACLMessage.INFORM, "REALLOCATEBIKES-REPLY", infoBikeBatch, true);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, false);
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, true);
 
                     }
                     else if (recvMessage.getOntology().equalsIgnoreCase("REALLOCATEBIKES-REPLY")){
@@ -140,7 +140,7 @@ public class Station extends ProntoAgent {
                         bikes.addAll(infoBikeBatch.bikes);
 
                         InfoStation infoStation = new InfoStation(getAID().getLocalName(), address, latitude, longitude, bikes.size(), dockcount);
-                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, false);
+                        send(myAgent, "Central", ACLMessage.INFORM, "UPDATESTATIONSINFO", infoStation, true);
 
                     }
                 }

@@ -99,7 +99,7 @@ public class User extends ProntoAgent {
 
                         InfoBike infoBike = new InfoBike(bike, getAID().getLocalName(), infoStation.station);
 
-                        send(myAgent, infoStation.station, ACLMessage.INFORM, "BIKEDEVOLUTION", infoBike, false);
+                        send(myAgent, infoStation.station, ACLMessage.INFORM, "BIKEDEVOLUTION", infoBike, true);
 
                         System.out.println("↓ [DEV] " + myAgent.getLocalName() + " ".repeat(11 - myAgent.getLocalName().length()) + "returned \uD83D\uDEB2 " + infoBike.bike + " @ " +  infoBike.station);
 

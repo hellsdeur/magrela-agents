@@ -34,7 +34,7 @@ public class MainUsers {
         ParserMap parserMap = new ParserMap("data/users_popular.csv", new String[] {"name", "from_lat", "from_long", "to_lat", "to_long", "delay"});
 
         List<String> names = new ArrayList<>(parserMap.getNames());
-        for (int i = 0; i < 30; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             String name = names.get(i);
             AgentController stationAgentController;
             try {
@@ -49,6 +49,15 @@ public class MainUsers {
                 stationAgentController.start();
             } catch (StaleProxyException e) {
                 e.printStackTrace();
+            }
+            // wait between 0 and 1 seconds before creating a new user
+            try {
+                int minms = 0;
+                int maxms = 10000;
+                int delay = (int) ((Math.random() * (maxms - minms)) + minms);
+                TimeUnit.MILLISECONDS.sleep(delay);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
         }
 //        for (String name: parserMap.getNames()) {

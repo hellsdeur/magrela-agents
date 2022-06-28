@@ -116,7 +116,7 @@ public class Central extends ProntoAgent {
                         }
 
                         InfoStation infoStation = stations.get(closestStation);
-                        send(myAgent, recvMessage.getSender().getLocalName(), ACLMessage.INFORM, "RENTALSTATIONREQUEST-REPLY", infoStation, false);
+                        send(myAgent, recvMessage.getSender().getLocalName(), ACLMessage.INFORM, "RENTALSTATIONREQUEST-REPLY", infoStation, true);
 
                     }
                     // if STATIONBIKEREQUEST-REPLY, then send bike to user
@@ -124,7 +124,7 @@ public class Central extends ProntoAgent {
 
                         InfoBike infoBike = (InfoBike) unpack(recvMessage);
 
-                        send(myAgent, infoBike.user, ACLMessage.INFORM, "BIKEREQUEST-REPLY", infoBike, false);
+                        send(myAgent, infoBike.user, ACLMessage.INFORM, "BIKEREQUEST-REPLY", infoBike, true);
 
                     }
                     // if DEVOLUTIONSTATIONREQUEST, then select a station and send a DEVOLUTIONSTATIONREQUEST-REPLY
@@ -144,7 +144,7 @@ public class Central extends ProntoAgent {
                         }
 
                         InfoStation infoStation = stations.get(closestStation);
-                        send(myAgent, recvMessage.getSender().getLocalName(), ACLMessage.INFORM, "DEVOLUTIONSTATIONREQUEST-REPLY", infoStation, false);
+                        send(myAgent, recvMessage.getSender().getLocalName(), ACLMessage.INFORM, "DEVOLUTIONSTATIONREQUEST-REPLY", infoStation, true);
 
                     }
                 } else {
